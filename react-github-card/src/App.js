@@ -42,23 +42,43 @@ class App extends React.Component {
     this.state = {
       user: {},
       followers: [],
-    }
-  }
+    };
+  };
+
   componentDidMount() {
     axios.get(`https://api.github.com/users/RococoCoding`)
-      .then(res => this.setState({...this.state, user: res.data}))
+      .then(res => {
+        this.setState({...this.state, user: res.data});
+        return res.data.followers_url;
+      })
+      .then(followers_url => {
+        axios.get(`${followers_url}`) //returns array with followers
+          .then(res => {
+            res.data.forEach(item => { 
+              axios.get(`${item.url}`) // gets each followers profile
+                .then(res => {
+                  let array = [];
+                  array.push(res.data);
+                  this.setState({...this.state, followers:array});
+                })
+            })
+          })
+          .catch(err => console.log(err));
+      })
       .catch(err => console.log(err));
   }
 
+  
   render() {
     return (
       <div className="App">
         <h2>Selected User</h2>
-          <Card user={this.state.user}/>
+          <Card person={this.state.user}/>
         <h2>Followers:</h2>
-          {this.state.followers.map(item => {
+          {this.state.followers.map((item, idx) => {
+            // console.log(item)
             return (
-              <Card follower={this.state.followers}/>
+              <Card key={idx} person={item}/>
             )
           })}
       </div>
